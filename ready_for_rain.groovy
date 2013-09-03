@@ -1,9 +1,9 @@
 /**
- *  When Its Going To Rain
+ *  Ready for Rain
  *
  *  Author: brian@bevey.org
  *  Date: 9/3/13
- *  Updated from original to send push notifications as well.
+ *  Updated from When It's Going To Rain to send push notifications as well.
  *  Added cron-like polling from Severe Weather Alert.
  */
 preferences {
