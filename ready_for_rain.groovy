@@ -2,16 +2,17 @@
  *  Ready for Rain
  *
  *  Author: brian@bevey.org
- *  Date: 9/3/13
- *  Updated from When It's Going To Rain to send push notifications as well.
- *  Added cron-like polling from Severe Weather Alert.
+ *  Date: 9/5/13
+ *  Warn if doors or windows are open when inclement weather is approaching.
+ *
+ *  Largely built from When It's Going To Rain and Severe Weather Alert.
  */
 preferences {
-  section("Zip code..."){
+  section("Zip code?"){
     input "zipcode", "text", title: "Zipcode?"
   }
 
-  section("Things to check..."){
+  section("Things to check?"){
     input "sensors", "capability.contactSensor", multiple: true
   }
 
@@ -23,32 +24,31 @@ preferences {
 
 def installed() {
   log.debug("Installed with settings: ${settings}")
-  schedule("0 */10 * * * ?", "scheduleCheck") //Check at top and half-past of every hour
+  schedule("0 0,30 * * * ?", scheduleCheck) // Check at top and half-past of every hour
 }
 
 def updated() {
-  log.debug("Updated with settings: ${settings}")
   unsubscribe()
-  schedule("0 */10 * * * ?", "scheduleCheck") //Check at top and half-past of every hour
+  log.debug("Updated with settings: ${settings}")
+  schedule("0 0,30 * * * ?", scheduleCheck) // Check at top and half-past of every hour
 }
 
 def scheduleCheck() {
-  def response = getWeatherFeature("forecast", zipcode)
+  def open = sensors.findAll { it?.latestValue("contact") == 'open' }
 
-  if (isStormy(response)) {
-    sensors.each {
-      log.debug it?.latestValue
+  // Only need to poll if something is left open.
+  if (open) {
+    log.info("Something's open - let's check the weather.")
+    def response = getWeatherFeature("forecast", zipcode)
+    def weather  = isStormy(response)
+
+    if (weather) {
+      send("Reported ${weather} coming and the following things are open: ${open.join(', ')}")
     }
+  }
 
-    def open = sensors.findAll { it?.latestValue == 'open' }
-
-    if (open) {
-      send("Reported ${response} coming and the following things are open: ${open.join(', ')}")
-    }
-
-	else {
-      log.warn("Reported ${response} coming but everything looks closed.")
-    }
+  else {
+  	log.info("Everything looks closed, no reason to check weather.")
   }
 }
 
@@ -63,13 +63,13 @@ private send(msg) {
     sendSms(phone, msg)
   }
 
-  log.debug msg
+  log.debug(msg)
 }
 
 private isStormy(json) {
-  def STORMY = ['rain', 'snow', 'showers', 'sprinkles', 'precipitation']
-
+  def types    = ['rain', 'snow', 'showers', 'sprinkles', 'precipitation']
   def forecast = json?.forecast?.txt_forecast?.forecastday?.first()
+  def result   = false
 
   if (forecast) {
     def text = forecast?.fcttext?.toLowerCase()
@@ -77,25 +77,21 @@ private isStormy(json) {
     log.debug(text)
 
     if (text) {
-      def result = false
-
-      for (int i = 0; i < STORMY.size() && !result; i++) {
-        if(text.contains(STORMY[i])) {
-          result = STORMY[i]
+      for (int i = 0; i < types.size() && !result; i++) {
+        if(text.contains(types[i])) {
+          result = types[i]
         }
       }
-
-      return result
     }
 
     else {
       log.warn("Got forecast, couldn't parse")
-      return false
     }
   }
 
   else {
-    log.warn("Did not get a forecast: $json")
-    return false
+    log.warn("Did not get a forecast: ${json}")
   }
+
+  return result
 }
