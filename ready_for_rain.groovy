@@ -48,7 +48,7 @@ def scheduleCheck() {
   }
 
   else {
-  	log.info("Everything looks closed, no reason to check weather.")
+    log.info("Everything looks closed, no reason to check weather.")
   }
 }
 
