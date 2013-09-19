@@ -2,22 +2,22 @@
  *  Ready for Rain
  *
  *  Author: brian@bevey.org
- *  Date: 9/5/13
- *  Warn if doors or windows are open when inclement weather is approaching.
+ *  Date: 9/10/13
  *
- *  Largely built from When It's Going To Rain and Severe Weather Alert.
+ *  Warn if doors or windows are open when inclement weather is approaching.
  */
+
 preferences {
-  section("Zip code?"){
+  section("Zip code?") {
     input "zipcode", "text", title: "Zipcode?"
   }
 
-  section("Things to check?"){
+  section("Things to check?") {
     input "sensors", "capability.contactSensor", multiple: true
   }
 
-  section( "Notifications" ) {
-    input "sendPushMessage", "enum", title: "Send a push notification?", metadata:[values:["Yes","No"]], required:false
+  section("Notifications") {
+    input "sendPushMessage", "enum", title: "Send a push notification?", metadata: [values: ["Yes", "No"]], required: false
     input "phone", "phone", title: "Send a Text Message?", required: false
   }
 }
@@ -30,11 +30,11 @@ def installed() {
 def updated() {
   unsubscribe()
   log.debug("Updated with settings: ${settings}")
-  schedule("0 0,30 * * * ?", scheduleCheck) // Check at top and half-past of every hour
+  schedule("0 0,30 * * * ?", scheduleCheck)
 }
 
 def scheduleCheck() {
-  def open = sensors.findAll { it?.latestValue("contact") == 'open' }
+  def open = sensors.findAll { it?.latestValue("contact") == "open" }
 
   // Only need to poll if something is left open.
   if (open) {
@@ -54,12 +54,12 @@ def scheduleCheck() {
 
 private send(msg) {
   if (sendPushMessage != "No") {
-    log.debug("sending push message")
+    log.debug("Sending push message")
     sendPush(msg)
   }
 
   if (phone) {
-    log.debug("sending text message")
+    log.debug("Sending text message")
     sendSms(phone, msg)
   }
 
@@ -67,7 +67,7 @@ private send(msg) {
 }
 
 private isStormy(json) {
-  def types    = ['rain', 'snow', 'showers', 'sprinkles', 'precipitation']
+  def types    = ["rain", "snow", "showers", "sprinkles", "precipitation"]
   def forecast = json?.forecast?.txt_forecast?.forecastday?.first()
   def result   = false
 
