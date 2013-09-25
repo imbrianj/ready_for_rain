@@ -25,15 +25,17 @@ preferences {
 def installed() {
   log.debug("Installed with settings: ${settings}")
   schedule("0 0,30 * * * ?", scheduleCheck) // Check at top and half-past of every hour
+  subscribe(sensors, "contact.open", scheduleCheck)
 }
 
 def updated() {
   unsubscribe()
   log.debug("Updated with settings: ${settings}")
   schedule("0 0,30 * * * ?", scheduleCheck)
+  subscribe(sensors, "contact.open", scheduleCheck)
 }
 
-def scheduleCheck() {
+def scheduleCheck(evt) {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
 
   // Only need to poll if something is left open.
@@ -43,7 +45,8 @@ def scheduleCheck() {
     def weather  = isStormy(response)
 
     if (weather) {
-      send("Reported ${weather} coming and the following things are open: ${open.join(', ')}")
+      def plural = open.size() > 1 ? "are" : "is"
+      send("${open.join(', ')} ${plural} open and reported ${weather} coming.")
     }
   }
 
