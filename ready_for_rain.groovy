@@ -20,34 +20,46 @@ preferences {
     input "sendPushMessage", "enum", title: "Send a push notification?", metadata: [values: ["Yes", "No"]], required: false
     input "phone", "phone", title: "Send a Text Message?", required: false
   }
+
+  section("Message interval (default to every message)") {
+    input name: "messageDelay", type: "number", title: "How Long?", required: false
+  }
 }
 
 def installed() {
-  log.debug("Installed with settings: ${settings}")
-  schedule("0 0,30 * * * ?", scheduleCheck) // Check at top and half-past of every hour
-  subscribe(sensors, "contact.open", scheduleCheck)
+  init()
 }
 
 def updated() {
   unsubscribe()
-  log.debug("Updated with settings: ${settings}")
-  schedule("0 0,30 * * * ?", scheduleCheck)
+  init()
+}
+
+def init() {
+  state.lastMessage = 0
+  state.lastCheck = ["time": 0, "result": false]
+  schedule("0 0,30 * * * ?", scheduleCheck) // Check at top and half-past of every hour
   subscribe(sensors, "contact.open", scheduleCheck)
 }
 
 def scheduleCheck(evt) {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
+  def plural = open.size() > 1 ? "are" : "is"
 
-  // Only need to poll if something is left open.
-  if (open) {
+  // Only need to poll if we haven't checked in a while - or if something is left open.
+  if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
     log.info("Something's open - let's check the weather.")
     def response = getWeatherFeature("forecast", zipcode)
     def weather  = isStormy(response)
 
     if (weather) {
-      def plural = open.size() > 1 ? "are" : "is"
       send("${open.join(', ')} ${plural} open and reported ${weather} coming.")
     }
+  }
+
+  else if((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) {
+    log.info("We have fresh weather data, no need to poll.")
+    send("${open.join(', ')} ${plural} open and reported ${state.lastCheck["result"]} coming.")
   }
 
   else {
@@ -56,17 +68,26 @@ def scheduleCheck(evt) {
 }
 
 private send(msg) {
-  if (sendPushMessage != "No") {
-    log.debug("Sending push message")
-    sendPush(msg)
+  def delay = (messageDelay != null && messageDelay != "") ? messageDelay * 60 * 1000 : 0
+
+  if(now() - delay > state.lastMessage) {
+    state.lastMessage = now()
+    if (sendPushMessage != "No") {
+      log.debug("Sending push message.")
+      sendPush(msg)
+    }
+
+    if (phone) {
+      log.debug("Sending text message.")
+      sendSms(phone, msg)
+    }
+
+    log.debug(msg)
   }
 
-  if (phone) {
-    log.debug("Sending text message")
-    sendSms(phone, msg)
+  else {
+    log.info("Have a message to send, but user requested to not not get it.")
   }
-
-  log.debug(msg)
 }
 
 private isStormy(json) {
@@ -88,13 +109,15 @@ private isStormy(json) {
     }
 
     else {
-      log.warn("Got forecast, couldn't parse")
+      log.warn("Got forecast, couldn't parse.")
     }
   }
 
   else {
     log.warn("Did not get a forecast: ${json}")
   }
+
+  state.lastCheck = ["time": now(), "result": result]
 
   return result
 }
