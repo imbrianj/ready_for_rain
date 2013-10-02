@@ -46,20 +46,20 @@ def scheduleCheck(evt) {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
   def plural = open.size() > 1 ? "are" : "is"
 
-  // Only need to poll if we haven't checked in a while - or if something is left open.
+  // Only need to poll if we haven't checked in a while - and if something is left open.
   if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
     log.info("Something's open - let's check the weather.")
     def response = getWeatherFeature("forecast", zipcode)
     def weather  = isStormy(response)
 
     if (weather) {
-      send("${open.join(', ')} ${plural} open and reported ${weather} coming.")
+      send("${open.join(', ')} ${plural} open and ${weather} coming.")
     }
   }
 
-  else if((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) {
+  else if(((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) && open) {
     log.info("We have fresh weather data, no need to poll.")
-    send("${open.join(', ')} ${plural} open and reported ${state.lastCheck["result"]} coming.")
+    send("${open.join(', ')} ${plural} open and ${state.lastCheck["result"]} coming.")
   }
 
   else {
