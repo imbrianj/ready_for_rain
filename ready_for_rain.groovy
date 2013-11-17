@@ -52,7 +52,7 @@ def scheduleCheck(evt) {
     def response = getWeatherFeature("forecast", zipcode)
     def weather  = isStormy(response)
 
-    if (weather) {
+    if(weather) {
       send("${open.join(', ')} ${plural} open and ${weather} coming.")
     }
   }
@@ -72,12 +72,12 @@ private send(msg) {
 
   if(now() - delay > state.lastMessage) {
     state.lastMessage = now()
-    if (sendPushMessage == "Yes") {
+    if(sendPushMessage == "Yes") {
       log.debug("Sending push message.")
       sendPush(msg)
     }
 
-    if (phone) {
+    if(phone) {
       log.debug("Sending text message.")
       sendSms(phone, msg)
     }
@@ -95,12 +95,12 @@ private isStormy(json) {
   def forecast = json?.forecast?.txt_forecast?.forecastday?.first()
   def result   = false
 
-  if (forecast) {
+  if(forecast) {
     def text = forecast?.fcttext?.toLowerCase()
 
     log.debug(text)
 
-    if (text) {
+    if(text) {
       for (int i = 0; i < types.size() && !result; i++) {
         if(text.contains(types[i])) {
           result = types[i]
