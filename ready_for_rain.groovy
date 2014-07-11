@@ -7,6 +7,16 @@
  *  Warn if doors or windows are open when inclement weather is approaching.
  */
 
+definition(
+  name: "Ready For Rain",
+  namespace: "imbrianj",
+  author: "brian@bevey.org",
+  description: "Warn if doors or windows are open when inclement weather is approaching.",
+  category: "Convenience",
+  iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
+  iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience%402x.png"
+)
+
 preferences {
   section("Zip code?") {
     input "zipcode", "text", title: "Zipcode?"
