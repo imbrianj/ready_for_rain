@@ -5,6 +5,13 @@
  *  Date: 9/10/13
  *
  *  Warn if doors or windows are open when inclement weather is approaching.
+ *
+ *  Changelog:
+ *
+ *  4/15/2016 by motley74 (motley74@gmail.com)
+ *  Added ability to set delay before attempting to send message,
+ *  will cancel alert if contacts closed within delay.
+ *
  */
 
 definition(
