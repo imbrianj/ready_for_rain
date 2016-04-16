@@ -31,8 +31,9 @@ preferences {
     input "phone", "phone", title: "Send a Text Message?", required: false
   }
 
-  section("Message interval?") {
-    input name: "messageDelay", type: "number", title: "Minutes (default to every message)", required: false
+  section("Message options?") {
+    input name: "messageDelay", type: "number", title: "Delay before sending initial message? Minutes (default to every message)", required: false
+    input name: "messageReset", type: "number", title: "Delay before sending secondary messages? Minutes (default to every message)", required: false
   }
 }
 
@@ -55,49 +56,52 @@ def init() {
 
 def scheduleCheck(evt) {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
-  def plural = open.size() > 1 ? "are" : "is"
-
+  def waitTime = messageDelay ? messageDelay * 60 : 0
+  
+  def expireWeather = (now() - (30 * 60 * 1000))
   // Only need to poll if we haven't checked in a while - and if something is left open.
   if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
     log.info("Something's open - let's check the weather.")
-    def response = getWeatherFeature("forecast", zipcode)
-    def weather  = isStormy(response)
+    state.weatherForecast = getWeatherFeature("forecast", zipcode)
+    def weather = isStormy(state.weatherForecast)
 
     if(weather) {
-      send("${open.join(', ')} ${plural} open and ${weather} coming.")
+      runIn(waitTime, "send", [overwrite: false])
     }
-  }
-
-  else if(((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) && open) {
+  } else if(((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) && open) {
     log.info("We have fresh weather data, no need to poll.")
-    send("${open.join(', ')} ${plural} open and ${state.lastCheck["result"]} coming.")
-  }
-
-  else {
+    runIn(waitTime, "send", [overwrite: false])
+  } else {
     log.info("Everything looks closed, no reason to check weather.")
   }
 }
 
-private send(msg) {
-  def delay = (messageDelay != null && messageDelay != "") ? messageDelay * 60 * 1000 : 0
+def send() {
+  def delay = (messageReset != null && messageReset != "") ? messageReset * 60 * 1000 : 0
+  def open = sensors.findAll { it?.latestValue("contact") == "open" }
+  def plural = open.size() > 1 ? "are" : "is"
+  def weather = isStormy(state.weatherForecast)
+  def msg = "${open.join(', ')} ${plural} open and ${weather} coming."
 
-  if(now() - delay > state.lastMessage) {
-    state.lastMessage = now()
-    if(sendPushMessage == "Yes") {
-      log.debug("Sending push message.")
-      sendPush(msg)
+  if(open) {
+    if(now() - delay > state.lastMessage) {
+      state.lastMessage = now()
+      if(sendPushMessage == "Yes") {
+        log.debug("Sending push message.")
+        sendPush(msg)
+      }
+
+      if(phone) {
+        log.debug("Sending text message.")
+        sendSms(phone, msg)
+      }
+
+      log.debug(msg)
+    } else {
+      log.info("Have a message to send, but user requested to not get it.")
     }
-
-    if(phone) {
-      log.debug("Sending text message.")
-      sendSms(phone, msg)
-    }
-
-    log.debug(msg)
-  }
-
-  else {
-    log.info("Have a message to send, but user requested to not get it.")
+  } else {
+    log.info("Everything closed before timeout.")
   }
 }
 
@@ -117,14 +121,10 @@ private isStormy(json) {
           result = types[i]
         }
       }
-    }
-
-    else {
+    } else {
       log.warn("Got forecast, couldn't parse.")
     }
-  }
-
-  else {
+  } else {
     log.warn("Did not get a forecast: ${json}")
   }
 
