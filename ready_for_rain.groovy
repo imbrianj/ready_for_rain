@@ -2,7 +2,7 @@
  *  Ready for Rain
  *
  *  Author: brian@bevey.org
- *  Date: 9/10/13
+ *  Date: 4/15/16
  *
  *  Warn if doors or windows are open when inclement weather is approaching.
  */
@@ -32,7 +32,11 @@ preferences {
   }
 
   section("Message interval?") {
-    input name: "messageDelay", type: "number", title: "Minutes (default to every message)", required: false
+    input name: "messageInterval", type: "number", title: "Minutes (default to every message)", required: false
+  }
+
+  section("Delay to wait before sending notification (defaults to 1 minute)") {
+    input "messageDelay", "decimal", title: "Number of minutes", required: false
   }
 }
 
@@ -55,7 +59,7 @@ def init() {
 
 def scheduleCheck(evt) {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
-  def plural = open.size() > 1 ? "are" : "is"
+  def delay = (messaegDelay != null && messageDelay != "") ? messageDelay * 60 : 60
 
   // Only need to poll if we haven't checked in a while - and if something is left open.
   if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
@@ -64,13 +68,14 @@ def scheduleCheck(evt) {
     def weather  = isStormy(response)
 
     if(weather) {
-      send("${open.join(', ')} ${plural} open and ${weather} coming.")
+      log.info("Looks like bad weather.  Let's trigger a message.")
+      runIn(delay, "messageTrigger")
     }
   }
 
   else if(((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) && open) {
     log.info("We have fresh weather data, no need to poll.")
-    send("${open.join(', ')} ${plural} open and ${state.lastCheck["result"]} coming.")
+    runIn(delay, "messageTrigger")
   }
 
   else {
@@ -78,8 +83,32 @@ def scheduleCheck(evt) {
   }
 }
 
+private messageTrigger() {
+  def open = sensors.findAll { it?.latestValue("contact") == "open" }
+  def plural = open.size() > 1 ? "are" : "is"
+  def weather = ""
+
+  // Let's check again since device states and weather may have changed since triggered.
+  if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
+    def response = getWeatherFeature("forecast", zipcode)
+    weather = isStormy(response)
+  }
+
+  else if(((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) && open) {
+    weather = state.lastCheck["result"]
+  }
+
+  if(weather) {
+    send("${open.join(', ')} ${plural} open and ${weather} coming.")
+  }
+
+  else {
+    log.info("No need to send message.")
+  }
+}
+
 private send(msg) {
-  def delay = (messageDelay != null && messageDelay != "") ? messageDelay * 60 * 1000 : 0
+  def delay = (messageInterval != null && messageInterval != "") ? messageInterval * 60 * 1000 : 0
 
   if(now() - delay > state.lastMessage) {
     state.lastMessage = now()
