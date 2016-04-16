@@ -32,7 +32,7 @@ preferences {
   }
 
   section("Message options?") {
-    input name: "messageDelay", type: "number", title: "Delay before sending initial message? Minutes (default to every message)", required: false
+    input name: "messageDelay", type: "number", title: "Delay before sending initial message? Minutes (default to no delay)", required: false
     input name: "messageReset", type: "number", title: "Delay before sending secondary messages? Minutes (default to every message)", required: false
   }
 }
