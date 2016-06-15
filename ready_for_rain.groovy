@@ -26,7 +26,7 @@ definition(
 
 preferences {
   section("Zip code?") {
-    input "zipcode", "text", title: "Zipcode?"
+    input "zipcode", "text", title: "Zipcode?", required: false
   }
 
   section("Things to check?") {
