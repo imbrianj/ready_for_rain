@@ -12,6 +12,9 @@
  *  Added ability to set delay before attempting to send message,
  *  will cancel alert if contacts closed within delay.
  *
+ *  6/17/2017 by jschlackman (jay@schlackman.org)
+ *  Added option to use hourly forecast instead of daily
+ *
  */
 
 definition(
@@ -29,6 +32,10 @@ preferences {
     input "zipcode", "text", title: "Zipcode?", required: false
   }
 
+  section("Forecast to check?") {
+	input "forecastType", "enum", title: "Rain expected when?", metadata: [values: ["Today", "Next Hour"]]
+  }
+  
   section("Things to check?") {
     input "sensors", "capability.contactSensor", multiple: true
   }
@@ -69,7 +76,13 @@ def scheduleCheck(evt) {
   // Only need to poll if we haven't checked in a while - and if something is left open.
   if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
     log.info("Something's open - let's check the weather.")
-    state.weatherForecast = getWeatherFeature("forecast", zipcode)
+	
+	// Get the forecast type specified in the options
+	if(forecastType == "Today") {
+	  state.weatherForecast = getWeatherFeature("forecast", zipcode)
+	} else {
+	  state.weatherForecast = getWeatherFeature("hourly", zipcode)
+	}
     def weather = isStormy(state.weatherForecast)
 
     if(weather) {
@@ -114,11 +127,23 @@ def send() {
 
 private isStormy(json) {
   def types    = ["rain", "snow", "showers", "sprinkles", "precipitation"]
-  def forecast = json?.forecast?.txt_forecast?.forecastday?.first()
+  def forecast = null
+  
+  if(forecastType == "Today") {
+    forecast = json?.forecast?.txt_forecast?.forecastday?.first()
+  } else {
+    forecast = json?.hourly_forecast?.first()
+  }
+  
   def result   = false
 
   if(forecast) {
-    def text = forecast?.fcttext?.toLowerCase()
+    def text = null
+    if(forecastType == "Today") {
+      text = forecast?.fcttext?.toLowerCase()
+    } else {
+      text = forecast?.condition?.toLowerCase()
+    }
 
     log.debug(text)
 
