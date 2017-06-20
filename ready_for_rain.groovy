@@ -12,7 +12,7 @@
  *  Added ability to set delay before attempting to send message,
  *  will cancel alert if contacts closed within delay.
  *
- *  6/17/2017 by jschlackman (jay@schlackman.org)
+ *  6/19/2017 by jschlackman (jay@schlackman.org)
  *  Added option to use hourly forecast instead of daily
  *
  */
@@ -73,9 +73,11 @@ def scheduleCheck(evt) {
   def waitTime = messageDelay ? messageDelay * 60 : 0
   
   def expireWeather = (now() - (30 * 60 * 1000))
-  // Only need to poll if we haven't checked in a while - and if something is left open.
-  if((now() - (30 * 60 * 1000) > state.lastCheck["time"]) && open) {
-    log.info("Something's open - let's check the weather.")
+  // Only need to poll if we haven't checked since defined expiry time - and if something is left open.
+  if(!open) {
+    log.info("Everything looks closed, no reason to check weather.")
+  } else if(expireWeather > state.lastCheck["time"]) {
+    log.info("Something's open, let's check the weather.")
 	
 	// Get the forecast type specified in the options
 	if(forecastType == "Today") {
@@ -88,11 +90,11 @@ def scheduleCheck(evt) {
     if(weather) {
       runIn(waitTime, "send", [overwrite: false])
     }
-  } else if(((now() - (30 * 60 * 1000) <= state.lastCheck["time"]) && state.lastCheck["result"]) && open) {
-    log.info("We have fresh weather data, no need to poll.")
+  } else if(state.lastCheck["result"]) {
+    log.info("We have fresh weather data, rain is expected.")
     runIn(waitTime, "send", [overwrite: false])
   } else {
-    log.info("Everything looks closed, no reason to check weather.")
+    log.info("We have fresh weather data, rain is not expected.")
   }
 }
 
@@ -126,7 +128,7 @@ def send() {
 }
 
 private isStormy(json) {
-  def types    = ["rain", "snow", "showers", "sprinkles", "precipitation"]
+  def types    = ["rain", "snow", "showers", "sprinkles", "precipitation", "thunderstorm", "sleet", "flurries"]
   def forecast = null
   
   if(forecastType == "Today") {
@@ -145,7 +147,7 @@ private isStormy(json) {
       text = forecast?.condition?.toLowerCase()
     }
 
-    log.debug(text)
+    log.debug("Forecast conditions: " + text)
 
     if(text) {
       for (int i = 0; i < types.size() && !result; i++) {
