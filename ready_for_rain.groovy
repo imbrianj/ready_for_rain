@@ -12,8 +12,9 @@
  *  Added ability to set delay before attempting to send message,
  *  will cancel alert if contacts closed within delay.
  *
- *  6/19/2017 by jschlackman (jay@schlackman.org)
+ *  6/23/2017 by jschlackman (jay@schlackman.org)
  *  Added option to use hourly forecast instead of daily
+ *  Added option for TTS notifications on a connected media player
  *
  */
 
@@ -44,6 +45,12 @@ preferences {
     input "sendPushMessage", "enum", title: "Send a push notification?", metadata: [values: ["Yes", "No"]], required: false
     input "phone", "phone", title: "Send a Text Message?", required: false
   }
+
+  section("Audio alerts?") {
+	input "sonos", "capability.musicPlayer", title: "Play on this Music Player", required: false, multiple: true, submitOnChange: true
+    input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+  }  
 
   section("Message options?") {
     input name: "messageDelay", type: "number", title: "Delay before sending initial message? Minutes (default to no delay)", required: false
@@ -116,6 +123,17 @@ def send() {
       if(phone) {
         log.debug("Sending text message.")
         sendSms(phone, msg)
+      }
+      
+      if(sonos) {
+        def sonosCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
+        def ttsMsg = textToSpeech(msg)
+        
+        if(sonosVolume) {
+          sonos."${sonosCommand}"(ttsMsg.uri, ttsMsg.duration, sonosVolume)
+        } else {
+          sonos."${sonosCommand}"(ttsMsg.uri, ttsMsg.duration)
+        }
       }
 
       log.debug(msg)
