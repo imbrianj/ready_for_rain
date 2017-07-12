@@ -78,6 +78,7 @@ def init() {
 def scheduleCheck(evt) {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
   def waitTime = messageDelay ? messageDelay * 60 : 0
+  def weatherFeature = null
   
   def expireWeather = (now() - (30 * 60 * 1000))
   // Only need to poll if we haven't checked since defined expiry time - and if something is left open.
@@ -88,9 +89,11 @@ def scheduleCheck(evt) {
 	
 	// Get the forecast type specified in the options
 	if(forecastType == "Today") {
-	  state.weatherForecast = getWeatherFeature("forecast", zipcode)
+	  weatherFeature = getWeatherFeature("forecast", zipcode)
+      state.weatherForecast = weatherFeature?.forecast?.txt_forecast?.forecastday?.first()
 	} else {
-	  state.weatherForecast = getWeatherFeature("hourly", zipcode)
+      weatherFeature = getWeatherFeature("hourly", zipcode)
+	  state.weatherForecast = weatherFeature?.hourly_forecast?.first()
 	}
     def weather = isStormy(state.weatherForecast)
 
@@ -110,7 +113,8 @@ def send() {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
   def plural = open.size() > 1 ? "are" : "is"
   def weather = isStormy(state.weatherForecast)
-  def msg = "${open.join(', ')} ${plural} open and ${weather} coming."
+  def rain = rainChance(state.weatherForecast)
+  def msg = "${open.join(', ')} ${plural} open and ${weather} coming. Chance of rain ${rain}."
 
   if(open) {
     if(now() - delay > state.lastMessage) {
@@ -145,16 +149,8 @@ def send() {
   }
 }
 
-private isStormy(json) {
+private isStormy(forecast) {
   def types    = ["rain", "snow", "showers", "sprinkles", "precipitation", "thunderstorm", "sleet", "flurries"]
-  def forecast = null
-  
-  if(forecastType == "Today") {
-    forecast = json?.forecast?.txt_forecast?.forecastday?.first()
-  } else {
-    forecast = json?.hourly_forecast?.first()
-  }
-  
   def result   = false
 
   if(forecast) {
@@ -165,7 +161,7 @@ private isStormy(json) {
       text = forecast?.condition?.toLowerCase()
     }
 
-    log.debug("Forecast conditions: " + text)
+    log.debug("Forecast conditions: ${text}.")
 
     if(text) {
       for (int i = 0; i < types.size() && !result; i++) {
@@ -182,5 +178,20 @@ private isStormy(json) {
 
   state.lastCheck = ["time": now(), "result": result]
 
+  return result
+}
+
+private rainChance(forecast) {
+  def result = false
+  
+  if(forecast) {
+    def text = null
+    if(forecastType == "Today") {
+      result = forecast?.pop + "%"
+    } else {
+      result = forecast?.pop + "%"
+    }
+  }  
+    
   return result
 }
