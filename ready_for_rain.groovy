@@ -13,8 +13,11 @@
  *  will cancel alert if contacts closed within delay.
  *
  *  6/23/2017 by jschlackman (jay@schlackman.org)
- *  Added option to use hourly forecast instead of daily
- *  Added option for TTS notifications on a connected media player
+ *  Added option to use hourly forecast instead of daily.
+ *  Added option for TTS notifications on a connected media player.
+ *
+ *  7/11/2017 by jschlackman (jay@schlackman.org)
+ *  Added option to include the chain of rain in the alert message.
  *
  */
 
@@ -55,6 +58,7 @@ preferences {
   section("Message options?") {
     input name: "messageDelay", type: "number", title: "Delay before sending initial message? Minutes (default to no delay)", required: false
     input name: "messageReset", type: "number", title: "Delay before sending secondary messages? Minutes (default to every message)", required: false
+    input name: "messageRainChance", type: "enum", title: "Include chance of rain in message?", metadata: [values: ["Yes", "No"]], required: false
   }
 }
 
@@ -113,8 +117,12 @@ def send() {
   def open = sensors.findAll { it?.latestValue("contact") == "open" }
   def plural = open.size() > 1 ? "are" : "is"
   def weather = isStormy(state.weatherForecast)
-  def rain = rainChance(state.weatherForecast)
-  def msg = "${open.join(', ')} ${plural} open and ${weather} coming. Chance of rain ${rain}."
+  def msg = "${open.join(', ')} ${plural} open and ${weather} coming."
+  
+  if (messageRainChance == "Yes") {
+    def rain = rainChance(state.weatherForecast)
+    msg = msg + " Chance of rain ${rain}."
+  }
 
   if(open) {
     if(now() - delay > state.lastMessage) {
