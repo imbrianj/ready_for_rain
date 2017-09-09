@@ -30,8 +30,8 @@ definition(
   author: "brian@bevey.org, james@schlackman.org",
   description: "Warn if doors or windows are open when inclement weather is approaching.",
   category: "Convenience",
-  iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
-  iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience%402x.png"
+  iconUrl: "https://s3.amazonaws.com/smartapp-icons/Meta/water_moisture.png",
+  iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Meta/water_moisture%402x.png"
 )
 
 preferences {
