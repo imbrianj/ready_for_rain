@@ -297,8 +297,13 @@ private airNowCategory() {
 			}            
         }
 
-		state.lastCheck = ["time": now(), "result": result]
-
+		// Ignore AQI result if it is less than the configured alert category
+        if(result.number >= airNowCat.toInteger()) {
+            state.lastCheck = ["time": now(), "result": result]
+        } else {
+        	state.lastCheck = ["time": now(), "result": false]
+		}
+        
 	} catch (e) {
         log.error("error: $e")
     }
