@@ -1,7 +1,7 @@
 /**
  *  Ready for Nature
  *
- *  Author: brian@bevey.org, james@schlackman.org
+ *  Author: brian@bevey.org, james@schlackman.org, motley74@gmail.com
  *  Date: 9/9/17
  *
  *  Warn if doors or windows are open when inclement weather is approaching.
@@ -27,12 +27,14 @@
 definition(
   name: "Ready For Nature",
   namespace: "jschlackman",
-  author: "brian@bevey.org, james@schlackman.org",
+  author: "brian@bevey.org, james@schlackman.org, motley74@gmail.com",
   description: "Warn if doors or windows are open when inclement weather is approaching.",
   category: "Convenience",
   iconUrl: "https://s3.amazonaws.com/smartapp-icons/Meta/water_moisture.png",
   iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Meta/water_moisture%402x.png"
-)
+) {
+  appSetting "airNowKey"
+}
 
 preferences {
   section("Zip Code") {
@@ -42,8 +44,8 @@ preferences {
   section("Forecast Options") {
 	input "forecastType", "enum", title: "Forecast range", options: ["Today", "Next Hour"], defaultValue: "Today", required: true
 	input "checkRain", "enum", title: "Check for rain?", options: ["Yes", "No"], defaultValue: "Yes", required: true
-    input "airNowKey", "text", title: "Check air quality? (Paste your AirNow API key here to use this feature)", required: false
-    input "airNowCat", "enum", title: "Alert on this air quality or worse", hideWhenEmpty: "airNowKey", required: true, defaultValue: 2, options: [
+    input "checkAir", "enum", title: "Check air quality?", options: ["Yes", "No"], defaultValue: "No", required: true
+    input "airNowCat", "enum", title: "Alert on this air quality or worse", required: true, defaultValue: 2, options: [
       1:"Good",
 	  2:"Moderate",
       3:"Unhealthy for Sensitive Groups",
@@ -123,7 +125,7 @@ def scheduleCheck(evt) {
 	}
 
 	// If configured to check air quality, get the AQI from AirNow.
-	if(airNowKey) {
+	if(checkAir) {
     	state.airCategory = airNowCategory()
 		if(state.airCategory.number >= airNowCat.toInteger()) {
 			sendAlert = true
