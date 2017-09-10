@@ -12,14 +12,14 @@
  *  Added ability to set delay before attempting to send message,
  *  will cancel alert if contacts closed within delay.
  *
- *  6/23/2017 by jschlackman (jay@schlackman.org)
+ *  6/23/2017 by jschlackman (james@schlackman.org)
  *  Added option to use hourly forecast instead of daily.
  *  Added option for TTS notifications on a connected media player.
  *
- *  7/11/2017 by jschlackman (jay@schlackman.org)
+ *  7/11/2017 by jschlackman (james@schlackman.org)
  *  Added option to include the chain of rain in the alert message.
  *
- *  9/9/2017 by jschlackman (jay@schlackman.org)
+ *  9/9/2017 by jschlackman (james@schlackman.org)
  *  Added option to check air quality as well as (or instead of) rain.
  *
  */
@@ -246,6 +246,7 @@ private isStormy(forecast) {
   return result
 }
 
+// Pull the percentage change of rain from stored weather forecast data
 private rainChance(forecast) {
   def result = false
   
@@ -261,11 +262,12 @@ private rainChance(forecast) {
   return result
 }
 
-
+// Get air quality category data from the AirNow API
 private airNowCategory() {
 	def result = null
 	def airZip = null
 
+	// Use hub zipcode if user has not defined their own
     if(checkZip) {
     	airZip = checkZip
     } else {
@@ -281,6 +283,7 @@ private airNowCategory() {
       requestPath = 'observation/zipCode/current/'
     }
     
+	// Set up the AirNow API query
 	def params = [
         uri:  'http://www.airnowapi.org/aq/',
         path: requestPath,
@@ -288,11 +291,14 @@ private airNowCategory() {
         query: [format:'application/json', zipCode: airZip, distance: 25, API_KEY: airNowKey]
     ]
     try {
+		// Send query to the AirNow API
         httpGet(params) {resp ->
             state.aqi = resp.data
+			// Print the AQI numbers and categories for both PM2.5 and O3 to the debug log.
             log.debug("${resp.data[0].ParameterName}: ${resp.data[0].AQI}, ${resp.data[0].Category.Name} (${resp.data[0].Category.Number})")
             log.debug("${resp.data[1].ParameterName}: ${resp.data[1].AQI}, ${resp.data[1].Category.Name} (${resp.data[1].Category.Number})")
 			
+			// We're only interested in whichever is the worst of the 2 categories, so figure out which one has the higher number and store it
             if(resp.data[0].Category.Number.toInteger() > resp.data[1].Category.Number.toInteger()) {
             	result = ["name": resp.data[0].Category.Name, "number": resp.data[0].Category.Number.toInteger()]
             } else {
