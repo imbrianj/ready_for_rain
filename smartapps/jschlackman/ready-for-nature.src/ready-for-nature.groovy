@@ -79,10 +79,12 @@ preferences {
 }
 
 def installed() {
+	log.debug "${app.label} installed with settings: ${settings}"
 	init()
 }
 
 def updated() {
+	log.debug "${app.label} updated with settings: ${settings}"
 	unsubscribe()
 	unschedule()
 	init()
@@ -163,13 +165,13 @@ def send() {
 
 	// Send message about rain if it is expected.
 	if(weather) {
-	msg = msg + " ${weather} coming. "
+		msg = msg + " ${weather} coming. "
 
-	// Report chance of rain if requested by user.
-	if (messageRainChance == "Yes") {
-		def rain = rainChance(state.weatherForecast)
-		msg = msg + "Chance of rain ${rain}. "
-	}
+		// Report chance of rain if requested by user.
+		if (messageRainChance == "Yes") {
+			def rain = rainChance(state.weatherForecast)
+			msg = msg + "Chance of rain ${rain}. "
+		}
 	}
 
 	// Send message about air quality if it meets or exceeds the requested alert category
@@ -195,10 +197,12 @@ def send() {
 				sendSms(phone, msg)
 			}
 
+			// Send a TTS message if configured
 			if(sonos) {
 				def sonosCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
 				def ttsMsg = textToSpeech(msg)
 
+				// Send message with a custom volume level if requested
 				if(sonosVolume) {
 					sonos."${sonosCommand}"(ttsMsg.uri, ttsMsg.duration, sonosVolume)
 				} else {
@@ -216,11 +220,16 @@ def send() {
 }
 
 private isStormy(forecast) {
+	
+	// List of WU phrases indicating precipitation
+	// https://www.wunderground.com/weather/api/d/docs?d=resources/phrase-glossary#forecast_description_phrases
 	def types = ["rain", "snow", "showers", "sprinkles", "precipitation", "thunderstorm", "sleet", "flurries"]
 	def result = false
 
 	if(forecast) {
 		def text = null
+		
+		// Parse the JSON according to the type of forecast (daily or hourly)
 		if(forecastType == "Today") {
 			text = forecast?.fcttext?.toLowerCase()
 		} else {
@@ -229,6 +238,7 @@ private isStormy(forecast) {
 
 		log.debug("Forecast conditions: ${text}")
 
+		// Check the forecast text for each of the precipitation types until we find one or exhaust the list
 		if(text) {
 			for (int i = 0; i < types.size() && !result; i++) {
 				if(text.contains(types[i])) {
@@ -252,12 +262,7 @@ private rainChance(forecast) {
 	def result = false
 
 	if(forecast) {
-		def text = null
-		if(forecastType == "Today") {
-			result = forecast?.pop + "%"
-		} else {
-			result = forecast?.pop + "%"
-		}
+		result = forecast?.pop + "%"
 	}	
 
 	return result
