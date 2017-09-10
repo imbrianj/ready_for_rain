@@ -30,8 +30,9 @@ definition(
   author: "brian@bevey.org, james@schlackman.org, motley74@gmail.com",
   description: "Warn if doors or windows are open when inclement weather is approaching.",
   category: "Convenience",
-  iconUrl: "https://s3.amazonaws.com/smartapp-icons/Meta/water_moisture.png",
-  iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Meta/water_moisture%402x.png"
+  iconUrl: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapps/jschlackman/ready-for-nature.src/ready-for-nature.png",
+  iconX2Url: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapps/jschlackman/ready-for-nature.src/ready-for-nature-x2.png"
+  iconX3Url: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapps/jschlackman/ready-for-nature.src/ready-for-nature-x3.png"
 ) {
   appSetting "airNowKey"
 }
@@ -44,7 +45,7 @@ preferences {
   section("Forecast Options") {
 	input "forecastType", "enum", title: "Forecast range", options: ["Today", "Next Hour"], defaultValue: "Today", required: true
 	input "checkRain", "enum", title: "Check for rain?", options: ["Yes", "No"], defaultValue: "Yes", required: true
-    input "checkAir", "enum", title: "Check air quality?", options: ["Yes", "No"], defaultValue: "No", required: true
+    input "checkAir", "enum", title: "Check air quality? (Requires API key to be set in IDE)", options: ["Yes", "No"], defaultValue: "No", required: true
     input "airNowCat", "enum", title: "Alert on this air quality or worse", required: true, defaultValue: 2, options: [
       1:"Good",
 	  2:"Moderate",
