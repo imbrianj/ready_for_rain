@@ -79,12 +79,12 @@ preferences {
 }
 
 def installed() {
-	log.debug "${app.label} installed with settings: ${settings}"
+	log.debug("${app.label} installed with settings: ${settings}")
 	init()
 }
 
 def updated() {
-	log.debug "${app.label} updated with settings: ${settings}"
+	log.debug("${app.label} updated with settings: ${settings}")
 	unsubscribe()
 	unschedule()
 	init()
