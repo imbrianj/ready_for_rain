@@ -31,7 +31,7 @@ definition(
 	description: "Warn if doors or windows are open when inclement weather is approaching.",
 	category: "Convenience",
 	iconUrl: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapp-icons/ready-for-nature.png",
-	iconX2Url: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapp-icons/ready-for-nature-x2.png"
+	iconX2Url: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapp-icons/ready-for-nature-x2.png",
 	iconX3Url: "https://raw.githubusercontent.com/jschlackman/ReadyForNature/master/smartapp-icons/ready-for-nature-x3.png"
 ) {
 	appSetting "airNowKey"
