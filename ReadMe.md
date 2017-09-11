@@ -17,3 +17,9 @@ This SmartThings app is a fork of [Ready for Rain](https://github.com/imbrianj/r
     3. Visit any of the Web Services pages (e.g. [Forecast by Zip Code](https://docs.airnowapi.org/forecastsbyzip/docs)) and look for **Your API Key:** in the top right of the page. Copy the key to the clipboard.
     4. Go to the SmartThings IDE > My SmartApps > Ready For Nature and click on **App Settings** in the top right.
 	5. Click **Settings** and paste in your API key in the **Value** box next to **airNowKey**
+3. Once installed into the IDE, add and configure for your hub via the SmartThings mobile app.
+
+## Acknowledgements
+
+* Special thanks to (imbrianj)[https://github.com/imbrianj] for the original **Ready for Rain** SmartApp and to [motley74](https://github.com/motley74) for his contributions.
+* App icons provided courtesy of (WebHostFace)[https://www.webhostface.com/blog/material-design-icons/].
