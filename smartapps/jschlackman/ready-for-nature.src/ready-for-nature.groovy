@@ -288,19 +288,21 @@ private airNowCategory() {
 	} else {
 		requestPath = 'observation/zipCode/current/'
 	}
-	
+    
+    log.debug("Getting AirNow data: ${requestPath}")
+    
 	// Set up the AirNow API query
 	def params = [
 		uri: 'http://www.airnowapi.org/aq/',
 		path: requestPath,
 		contentType: 'application/json',
-		query: [format:'application/json', zipCode: airZip, distance: 25, API_KEY: airNowKey]
+		query: [format:'application/json', zipCode: airZip, distance: 25, API_KEY: appSettings.airNowKey]
 	]
 
 	try {
 	// Send query to the AirNow API
 		httpGet(params) {resp ->
-			state.aqi = resp.data
+            state.aqi = resp.data
 			// Print the AQI numbers and categories for both PM2.5 and O3 to the debug log.
 			log.debug("${resp.data[0].ParameterName}: ${resp.data[0].AQI}, ${resp.data[0].Category.Name} (${resp.data[0].Category.Number})")
 			log.debug("${resp.data[1].ParameterName}: ${resp.data[1].AQI}, ${resp.data[1].Category.Name} (${resp.data[1].Category.Number})")
@@ -322,7 +324,9 @@ private airNowCategory() {
 				
 	}
 	catch (e) {
-		log.error("error: $e")
+		log.error("Could not retrieve AQI: $e")
+        // AQI information could not be retrieved
+        result = ["name": "Unavailable", "number": 0]
 	}
 
 	return result
